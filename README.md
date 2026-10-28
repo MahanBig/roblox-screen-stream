@@ -36,22 +36,16 @@ capture → encode ───────────────▶ polls 5×/s 
 ## Quick start (testing in Studio)
 
 1. **Download** this repo (green **Code** button → *Download ZIP*, or `git clone`).
-2. **Install the Python packages:**
-   ```bash
-   pip install -r requirements.txt
-   ```
-3. **Start the sender.** Pick your own secret token:
-   ```bash
-   python sender/stream_server.py --token pick-a-secret
-   ```
-   It prints its frame rate and bandwidth once a second.
-4. **In Studio**, right-click **Workspace** → **Insert from File…** → choose `ScreenStream.rbxm`.
+2. **Double-click `sender/ScreenStream.pyw`.** A small window opens with a random token already filled in.
+   Press **Start streaming**. The first time, it offers to install the Python packages it needs.
+   The bottom line shows the frame rate and bandwidth once a second.
+3. **In Studio**, right-click **Workspace** → **Insert from File…** → choose `ScreenStream.rbxm`.
    This adds a `ScreenStream` folder with a screen part and the scripts.
-5. **Open `Workspace.ScreenStream.StreamServer`** and set `TOKEN` to the same secret.
-6. **Open Home → Game Settings → Security** and turn on:
+4. **Open `Workspace.ScreenStream.StreamServer`** and set `TOKEN` to the token from the window (use its **Copy** button).
+5. **Open Home → Game Settings → Security** and turn on:
    - **Allow HTTP Requests**
    - **Allow Mesh / Image APIs**
-7. **Press Play.** The screen 30 studs in front of the origin shows your monitor.
+6. **Press Play.** The screen 30 studs in front of the origin shows your monitor.
 
 ## Screens
 
@@ -61,7 +55,7 @@ capture → encode ───────────────▶ polls 5×/s 
 
 ## Settings
 
-All settings are on the sender. The Roblox side picks up the picture size and frame rate automatically.
+All settings are in the sender window (or, from a terminal, `python sender/stream_server.py --token ...`). The Roblox side picks up the picture size and frame rate automatically.
 
 | Option | Default | What it does |
 |---|---|---|
