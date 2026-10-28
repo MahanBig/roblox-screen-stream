@@ -59,7 +59,8 @@ All settings are in the sender window (or, from a terminal, `python sender/strea
 
 | Option | Default | What it does |
 |---|---|---|
-| `--token` | (required) | Shared secret; must match `TOKEN` in StreamServer |
+| `--token` | (required) | Shared secret, letters and digits only; must match `TOKEN` in StreamServer |
+| `--size WxH` | from preset | Resolution, e.g. `480x272` (multiples of 16, up to 1024). Roblox picks it up automatically, even mid-game |
 | `--preset live` | ✓ | 320×176, 15 fps, 40 KB/s per player. Meant for published games |
 | `--preset max` | | 640×352, 15 fps, 320 KB/s per player. **Studio only** |
 | `--budget N` | from preset | Bandwidth cap in KB/s per player |

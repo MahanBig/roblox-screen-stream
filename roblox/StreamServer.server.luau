@@ -6,8 +6,8 @@
 -- localhost only works while testing in Studio. For a published game, run a tunnel
 -- (e.g. `cloudflared tunnel --url http://localhost:8080`) and put its https URL here.
 local URL = "http://localhost:8080"
--- Must match the --token you start the sender with.
-local TOKEN = "change-me"
+-- Must match the token in the sender window (letters and digits only).
+local TOKEN = "PasteYourTokenHere"
 -- 5 requests/s = 300/min, under Roblox's 500 HTTP requests/min per server.
 local POLL_INTERVAL = 0.2
 ------------------------------------------------------------------------------------

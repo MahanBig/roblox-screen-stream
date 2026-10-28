@@ -145,11 +145,29 @@ class Handler(BaseHTTPRequestHandler):
         pass
 
 
+def token_arg(text):
+    if not (text.isascii() and text.isalnum()):
+        raise argparse.ArgumentTypeError("use only letters (A-Z, a-z) and digits (0-9)")
+    return text
+
+
+def size_arg(text):
+    try:
+        w, h = (int(v) for v in text.lower().split("x"))
+    except ValueError:
+        raise argparse.ArgumentTypeError("use WIDTHxHEIGHT, e.g. 480x272")
+    if w % 16 or h % 16 or not (16 <= w <= 1024 and 16 <= h <= 1024):
+        raise argparse.ArgumentTypeError("width and height must be multiples of 16, from 16 to 1024")
+    return w, h
+
+
 def main():
     global W, H, FPS, BUDGET, TOKEN, MONITOR
     parser = argparse.ArgumentParser(description="Stream your screen to Roblox.")
-    parser.add_argument("--token", required=True, help="shared secret; must match TOKEN in StreamServer")
+    parser.add_argument("--token", required=True, type=token_arg,
+                        help="shared secret (letters and digits only); must match TOKEN in StreamServer")
     parser.add_argument("--preset", choices=PRESETS, default="live", help="live (default) or max (Studio only)")
+    parser.add_argument("--size", type=size_arg, help="override the resolution, e.g. 480x272 (multiples of 16, max 1024)")
     parser.add_argument("--budget", type=int, help="override the bandwidth cap, in KB/s per player")
     parser.add_argument("--fps", type=int, help="override the frame rate")
     parser.add_argument("--monitor", type=int, default=1, help="monitor number (1 = primary)")
@@ -157,7 +175,7 @@ def main():
     args = parser.parse_args()
 
     preset = PRESETS[args.preset]
-    W, H = preset["size"]
+    W, H = args.size or preset["size"]
     FPS = args.fps or preset["fps"]
     BUDGET = (args.budget or preset["budget_kb"]) * 1024
     TOKEN = args.token

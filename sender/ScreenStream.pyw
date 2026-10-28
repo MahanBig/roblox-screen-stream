@@ -6,6 +6,7 @@ stream_server.py in the background; its status line is shown at the bottom.
 import json
 import os
 import secrets
+import string
 import subprocess
 import sys
 import threading
@@ -16,8 +17,18 @@ from tkinter import messagebox, ttk
 HERE = Path(__file__).resolve().parent
 SETTINGS = HERE / "settings.json"
 REQUIREMENTS = HERE.parent / "requirements.txt"
-DEFAULTS = {"token": "", "preset": "live", "budget": "", "fps": "", "monitor": "1", "port": "8080"}
+DEFAULTS = {"token": "", "preset": "live", "size": "", "budget": "", "fps": "", "monitor": "1", "port": "8080"}
 NO_WINDOW = 0x08000000 if os.name == "nt" else 0  # CREATE_NO_WINDOW
+TOKEN_CHARS = string.ascii_letters + string.digits
+SIZES = ["", "256x144", "320x176", "480x272", "640x352", "800x448", "960x544", "1024x576"]
+
+
+def new_token():
+    return "".join(secrets.choice(TOKEN_CHARS) for _ in range(20))
+
+
+def valid_token(token):
+    return bool(token) and all(c in TOKEN_CHARS for c in token)
 
 
 def python_exe():
@@ -41,8 +52,8 @@ class App:
         root.resizable(False, False)
 
         saved = DEFAULTS | (json.loads(SETTINGS.read_text()) if SETTINGS.exists() else {})
-        if not saved["token"]:
-            saved["token"] = secrets.token_urlsafe(12)
+        if not valid_token(saved["token"]):
+            saved["token"] = new_token()  # also replaces older tokens that had symbols
         self.vars = {k: tk.StringVar(value=str(v)) for k, v in saved.items()}
 
         frm = ttk.Frame(root, padding=12)
@@ -50,6 +61,7 @@ class App:
         rows = [
             ("Token (copy into StreamServer)", "token"),
             ("Preset", "preset"),
+            ("Resolution (blank = preset)", "size"),
             ("Bandwidth cap KB/s (blank = preset)", "budget"),
             ("Frames per second (blank = 15)", "fps"),
             ("Monitor (1 = main)", "monitor"),
@@ -59,10 +71,14 @@ class App:
             ttk.Label(frm, text=label).grid(row=r, column=0, sticky="w", pady=2)
             if key == "preset":
                 w = ttk.Combobox(frm, textvariable=self.vars[key], values=["live", "max"], state="readonly", width=28)
+            elif key == "size":
+                w = ttk.Combobox(frm, textvariable=self.vars[key], values=SIZES, width=28)
             else:
                 w = ttk.Entry(frm, textvariable=self.vars[key], width=30)
             w.grid(row=r, column=1, pady=2)
         ttk.Button(frm, text="Copy", width=6, command=self.copy_token).grid(row=0, column=2, padx=(4, 0))
+        ttk.Button(frm, text="New", width=6, command=lambda: self.vars["token"].set(new_token())).grid(
+            row=0, column=3, padx=(4, 0))
         ttk.Label(frm, text="live = safe for published games, max = Studio only", foreground="gray").grid(
             row=len(rows), column=0, columnspan=3, sticky="w")
 
@@ -89,9 +105,14 @@ class App:
             if v[key] and not v[key].isdigit():
                 messagebox.showerror("Screen Stream", f"{key} must be a whole number.")
                 return
-        if not v["token"]:
-            messagebox.showerror("Screen Stream", "Enter a token.")
+        if not valid_token(v["token"]):
+            messagebox.showerror("Screen Stream", "The token can only use letters (A-Z, a-z) and digits (0-9).")
             return
+        if v["size"]:
+            parts = v["size"].lower().split("x")
+            if len(parts) != 2 or not all(p.isdigit() and int(p) % 16 == 0 and 16 <= int(p) <= 1024 for p in parts):
+                messagebox.showerror("Screen Stream", "Resolution must look like 480x272, using multiples of 16 up to 1024.")
+                return
         self.save()
         if missing_packages():
             if not messagebox.askyesno("Screen Stream", "Some Python packages are missing. Install them now?"):
@@ -104,8 +125,10 @@ class App:
                 messagebox.showerror("Screen Stream", "Install failed:\n" + result.stderr[-800:])
                 self.status.set("Stopped")
                 return
-        args = [python_exe(), "-u", str(HERE / "stream_server.py"), "--token", v["token"], "--preset", v["preset"],
+        args = [python_exe(), "-u", str(HERE / "stream_server.py"), f"--token={v['token']}", "--preset", v["preset"],
                 "--monitor", v["monitor"] or "1", "--port", v["port"] or "8080"]
+        if v["size"]:
+            args.append(f"--size={v['size'].lower()}")
         if v["budget"]:
             args += ["--budget", v["budget"]]
         if v["fps"]:
